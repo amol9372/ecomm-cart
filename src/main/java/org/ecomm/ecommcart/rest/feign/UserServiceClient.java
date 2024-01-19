@@ -1,6 +1,6 @@
 package org.ecomm.ecommcart.rest.feign;
 
-import org.ecomm.ecommcart.rest.model.UserResponse;
+import org.ecomm.ecommcart.rest.feign.model.UserResponse;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;

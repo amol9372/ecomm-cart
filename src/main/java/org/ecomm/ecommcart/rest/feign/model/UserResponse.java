@@ -1,4 +1,4 @@
-package org.ecomm.ecommcart.rest.model;
+package org.ecomm.ecommcart.rest.feign.model;
 
 import lombok.*;
 

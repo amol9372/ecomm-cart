@@ -4,17 +4,30 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+
 import lombok.extern.slf4j.Slf4j;
 import org.ecomm.ecommcart.persistance.entity.cart.CartStatus;
 import org.ecomm.ecommcart.persistance.entity.cart.ECart;
 import org.ecomm.ecommcart.persistance.entity.cart.ECartItem;
+import org.ecomm.ecommcart.persistance.repository.CartItemRepository;
 import org.ecomm.ecommcart.persistance.repository.CartRepository;
-import org.ecomm.ecommcart.rest.model.UserResponse;
+import org.ecomm.ecommcart.rest.builder.CartBuilder;
+import org.ecomm.ecommcart.rest.feign.ProductServiceClient;
+import org.ecomm.ecommcart.rest.feign.model.ProductCartDetail;
+import org.ecomm.ecommcart.rest.model.Cart;
+import org.ecomm.ecommcart.rest.model.CartItem;
+import org.ecomm.ecommcart.rest.feign.model.UserResponse;
 import org.ecomm.ecommcart.rest.request.AddToCartRequest;
+import org.ecomm.ecommcart.utils.Utility;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -22,6 +35,10 @@ import org.springframework.stereotype.Service;
 public class CartServiceImpl implements CartService {
 
   @Autowired CartRepository cartRepository;
+
+  @Autowired CartItemRepository cartItemRepository;
+
+  @Autowired ProductServiceClient productServiceClient;
 
   @Override
   @Transactional
@@ -35,17 +52,85 @@ public class CartServiceImpl implements CartService {
             .orElse(createCart.apply(user.getId()));
 
     var cartItem =
-            ECartItem.builder()
-                    .cart(activeCart)
-                    .productId(request.getProductId())
-                    .quantity(request.getQuantity())
-                    .variantId(request.getVariantId())
-                    .build();
+        ECartItem.builder()
+            .cart(activeCart)
+            .productId(request.getProductId())
+            .quantity(request.getQuantity())
+            .variantId(request.getVariantId())
+            .build();
 
+    log.info("Adding product to cart ::: {}", request);
     addItemToCart(activeCart, cartItem);
 
     cartRepository.save(activeCart);
   }
+
+  @Override
+  public Cart getCart() {
+
+    UserResponse user = getLoggedInUser();
+
+    var cart =
+        cartRepository
+            .findByUserIdAndStatus(user.getId(), CartStatus.ACTIVE)
+            .orElse(ECart.builder().build());
+
+    String variantIds =
+        cart.getCartItems().stream()
+            .map(ECartItem::getVariantId)
+            .map(String::valueOf)
+            .collect(Collectors.joining(","));
+
+    List<CartItem> productCartDetails =
+        productServiceClient.getProductCartDetail(variantIds, "ecomm-cart").getBody();
+
+    List<CartItem> cartItems =
+        cart.getCartItems().stream().map(CartBuilder::with).collect(Collectors.toList());
+
+    productCartDetails =
+        Utility.stream(productCartDetails)
+            .map(
+                cartItem -> {
+                  var item = findByVariant.apply(cartItem.getVariantId(), cartItems);
+                  cartItem.setQuantity(item.getQuantity());
+                  cartItem.setId(item.getId());
+                  return cartItem;
+                })
+            .collect(Collectors.toList());
+
+    return Cart.builder()
+        .cartItems(productCartDetails)
+        .id(cart.getId())
+        .status(cart.getStatus().name())
+        .userId(cart.getUserId())
+        .build();
+  }
+
+  @Override
+  public void deleteCartItem(int cartItemId) {
+
+    cartRepository.deleteCartItem(cartItemId);
+  }
+
+  @Override
+  public void submit() {
+    UserResponse user = getLoggedInUser();
+
+    var cart =
+        cartRepository
+            .findByUserIdAndStatus(user.getId(), CartStatus.ACTIVE)
+            .orElse(ECart.builder().build());
+
+    // change cart status - CHECKOUT
+
+  }
+
+  BiFunction<Integer, List<CartItem>, CartItem> findByVariant =
+      (variant, productCartDetail) ->
+          productCartDetail.stream()
+              .filter(cartItem -> Objects.equals(cartItem.getVariantId(), variant))
+              .findFirst()
+              .orElseThrow();
 
   private static UserResponse getLoggedInUser() {
     ObjectMapper objectMapper = new ObjectMapper();
@@ -71,6 +156,5 @@ public class CartServiceImpl implements CartService {
   }
 
   Function<Integer, ECart> createCart =
-      (userId) ->
-          ECart.builder().userId(userId).status(CartStatus.ACTIVE).build();
+      (userId) -> ECart.builder().userId(userId).status(CartStatus.ACTIVE).build();
 }

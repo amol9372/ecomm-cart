@@ -11,10 +11,12 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserPreferences extends BaseModel {
+public class CartItem extends BaseModel {
 
-  String language;
-  boolean twoFactorEnabled;
-  String twoFactorMode;
-  String currency;
+    Integer productId;
+    Integer variantId;
+    int quantity;
+    String name;
+    String imageUrl;
+    double price;
 }

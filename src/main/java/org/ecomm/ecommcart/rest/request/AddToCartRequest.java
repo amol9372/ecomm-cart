@@ -8,6 +8,7 @@ import lombok.*;
 @NoArgsConstructor
 @Builder
 @AllArgsConstructor
+@ToString
 public class AddToCartRequest {
 
   @JsonProperty("variant_id")

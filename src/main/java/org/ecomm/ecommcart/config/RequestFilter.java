@@ -15,7 +15,7 @@ import org.ecomm.ecommcart.exception.ErrorCodes;
 import org.ecomm.ecommcart.exception.ErrorResponse;
 import org.ecomm.ecommcart.exception.UnauthorizedUserException;
 import org.ecomm.ecommcart.rest.feign.UserServiceClient;
-import org.ecomm.ecommcart.rest.model.UserResponse;
+import org.ecomm.ecommcart.rest.feign.model.UserResponse;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.annotation.Order;

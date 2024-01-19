@@ -17,24 +17,25 @@ import java.io.IOException;
 @Component
 @Order(1)
 @Slf4j
-public class FilterChainExceptionHandler extends OncePerRequestFilter {
-
-    @Autowired
-    @Qualifier("handlerExceptionResolver")
-    private HandlerExceptionResolver resolver;
-
-    @Override
-    protected void doFilterInternal(
-            HttpServletRequest request,
-            HttpServletResponse response,
-            FilterChain filterChain)
-            throws ServletException, IOException {
-
-        try {
-            filterChain.doFilter(request, response);
-        } catch (Exception e) {
-            log.error("Spring Security Filter Chain Exception:", e);
-            resolver.resolveException(request, response, null, e);
-        }
-    }
+public class FilterChainExceptionHandler {
+//        extends OncePerRequestFilter {
+//
+//    @Autowired
+//    @Qualifier("handlerExceptionResolver")
+//    private HandlerExceptionResolver resolver;
+//
+//    @Override
+//    protected void doFilterInternal(
+//            HttpServletRequest request,
+//            HttpServletResponse response,
+//            FilterChain filterChain)
+//            throws ServletException, IOException {
+//
+//        try {
+//            filterChain.doFilter(request, response);
+//        } catch (Exception e) {
+//            log.error("Spring Security Filter Chain Exception:", e);
+//            resolver.resolveException(request, response, null, e);
+//        }
+//    }
 }
