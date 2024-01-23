@@ -19,4 +19,5 @@ public class CartItem extends BaseModel {
     String name;
     String imageUrl;
     double price;
+    int inventoryAvailable;
 }

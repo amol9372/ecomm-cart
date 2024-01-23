@@ -9,6 +9,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import lombok.extern.slf4j.Slf4j;
@@ -98,10 +99,16 @@ public class CartServiceImpl implements CartService {
                 })
             .collect(Collectors.toList());
 
+    double totalPrice =
+        productCartDetails.stream()
+            .collect(Collectors.summarizingDouble(CartItem::getPrice))
+            .getSum();
+
     return Cart.builder()
         .cartItems(productCartDetails)
         .id(cart.getId())
         .status(cart.getStatus().name())
+        .totalPrice(totalPrice)
         .userId(cart.getUserId())
         .build();
   }
