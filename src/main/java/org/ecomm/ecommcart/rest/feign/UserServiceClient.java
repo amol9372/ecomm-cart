@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestHeader;
 
-@FeignClient(name = "user-service", url = "http://localhost:8080/api/user")
+@FeignClient(name = "user-service", url = "http://host.docker.internal:8080/api/user")
 public interface UserServiceClient {
 
   @GetMapping(value = "{email}")

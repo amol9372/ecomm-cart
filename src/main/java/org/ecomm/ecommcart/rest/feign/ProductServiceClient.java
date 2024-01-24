@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 
-@FeignClient(name = "product-service", url = "http://localhost:8081/api/product")
+@FeignClient(name = "product-service", url = "http://host.docker.internal:8081/api/product")
 public interface ProductServiceClient {
 
   @GetMapping
