@@ -14,4 +14,8 @@ public interface CartService {
     void deleteCartItem(int cartItemId);
 
     void submit();
+
+    Cart getCart(String email);
+
+    void checkout();
 }

@@ -26,6 +26,7 @@ public class CartController {
     return ResponseEntity.ok(cart);
   }
 
+
   @PostMapping("submit")
   public ResponseEntity<Object> submit(){
     cartService.submit();
@@ -36,6 +37,11 @@ public class CartController {
   public ResponseEntity<?> deleteCartItem(@PathVariable int cartItemId) {
     cartService.deleteCartItem(cartItemId);
     return ResponseEntity.noContent().build();
+  }
+
+  @PostMapping("checkout")
+  public void checkout(){
+    cartService.checkout();
   }
 
 }

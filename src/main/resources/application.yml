@@ -11,6 +11,8 @@ spring:
     driver-class-name: org.postgresql.Driver
 
 
+host:
+  url: ${HOST_URL}
 #  cloud:
 #    openfeign:
 #      client:

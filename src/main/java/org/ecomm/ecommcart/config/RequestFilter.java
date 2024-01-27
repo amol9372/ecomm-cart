@@ -4,7 +4,9 @@ import static org.springframework.util.ObjectUtils.isEmpty;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Objects;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -38,9 +40,15 @@ public class RequestFilter extends OncePerRequestFilter {
       HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
       throws ServletException, IOException {
 
-    log.info("Request ::: {}", request);
-    // String requestMethod = request.getMethod();
+    if (Objects.nonNull(request.getHeader("service"))) {
+
+      setUserInContext(request.getHeader("email"));
+      filterChain.doFilter(request, response);
+      return;
+    }
+
     String userEmail = request.getHeader("x-auth0-user-email");
+
     if (isEmpty(userEmail)) {
       log.error("User email header missing [x-auth0-user-email]");
 
@@ -52,6 +60,11 @@ public class RequestFilter extends OncePerRequestFilter {
       throw new UnauthorizedUserException(HttpStatus.UNAUTHORIZED, errorResponse);
     }
 
+    setUserInContext(userEmail);
+    filterChain.doFilter(request, response);
+  }
+
+  private void setUserInContext(String userEmail) throws JsonProcessingException {
     ResponseEntity<UserResponse> basicUserInfo =
         userServiceClient.getUserByEmail(userEmail, "ecomm-cart");
 
@@ -69,7 +82,5 @@ public class RequestFilter extends OncePerRequestFilter {
               .build();
       throw new UnauthorizedUserException(HttpStatus.UNAUTHORIZED, errorResponse);
     }
-
-    filterChain.doFilter(request, response);
   }
 }

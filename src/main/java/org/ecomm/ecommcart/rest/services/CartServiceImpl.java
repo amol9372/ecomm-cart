@@ -13,6 +13,9 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import lombok.extern.slf4j.Slf4j;
+import org.ecomm.ecommcart.exception.ErrorCodes;
+import org.ecomm.ecommcart.exception.ErrorResponse;
+import org.ecomm.ecommcart.exception.ResourceNotFoundException;
 import org.ecomm.ecommcart.persistance.entity.cart.CartStatus;
 import org.ecomm.ecommcart.persistance.entity.cart.ECart;
 import org.ecomm.ecommcart.persistance.entity.cart.ECartItem;
@@ -20,6 +23,7 @@ import org.ecomm.ecommcart.persistance.repository.CartItemRepository;
 import org.ecomm.ecommcart.persistance.repository.CartRepository;
 import org.ecomm.ecommcart.rest.builder.CartBuilder;
 import org.ecomm.ecommcart.rest.feign.ProductServiceClient;
+import org.ecomm.ecommcart.rest.feign.UserServiceClient;
 import org.ecomm.ecommcart.rest.feign.model.ProductCartDetail;
 import org.ecomm.ecommcart.rest.model.Cart;
 import org.ecomm.ecommcart.rest.model.CartItem;
@@ -28,6 +32,7 @@ import org.ecomm.ecommcart.rest.request.AddToCartRequest;
 import org.ecomm.ecommcart.utils.Utility;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
@@ -40,6 +45,8 @@ public class CartServiceImpl implements CartService {
   @Autowired CartItemRepository cartItemRepository;
 
   @Autowired ProductServiceClient productServiceClient;
+
+  @Autowired UserServiceClient userServiceClient;
 
   @Override
   @Transactional
@@ -71,13 +78,62 @@ public class CartServiceImpl implements CartService {
 
     UserResponse user = getLoggedInUser();
 
+    return getActiveCartProducts(user);
+  }
+
+  @Override
+  public void deleteCartItem(int cartItemId) {
+
+    cartRepository.deleteCartItem(cartItemId);
+  }
+
+  @Override
+  public void submit() {
+    UserResponse user = getLoggedInUser();
+
     var cart =
         cartRepository
             .findByUserIdAndStatus(user.getId(), CartStatus.ACTIVE)
             .orElse(ECart.builder().build());
 
+    // change cart status - CHECKOUT
+
+  }
+
+  @Override
+  public Cart getCart(String email) {
+    UserResponse user = userServiceClient.getUserByEmail(email, "ecomm-cart").getBody();
+
+    assert user != null;
+
+    return getActiveCartProducts(user);
+  }
+
+  @Override
+  public void checkout() {
+    UserResponse user = getLoggedInUser();
+
+    ECart cart =
+        cartRepository.findByUserIdAndStatus(user.getId(), CartStatus.ACTIVE).orElseThrow();
+    cart.setStatus(CartStatus.SUBMITTED);
+
+    cartRepository.save(cart);
+  }
+
+  private Cart getActiveCartProducts(UserResponse user) {
+    var cart =
+        cartRepository
+            .findByUserIdAndStatus(user.getId(), CartStatus.ACTIVE)
+            .orElseThrow(
+                () -> new ResourceNotFoundException(
+                        HttpStatus.UNPROCESSABLE_ENTITY,
+                        ErrorResponse.builder()
+                                .code(ErrorCodes.RESOURCE_DOES_NOT_EXIST)
+                                .message("Cart does not exist")
+                                .build()));
+
     String variantIds =
-        cart.getCartItems().stream()
+        Utility.stream(cart.getCartItems())
             .map(ECartItem::getVariantId)
             .map(String::valueOf)
             .collect(Collectors.joining(","));
@@ -111,25 +167,6 @@ public class CartServiceImpl implements CartService {
         .totalPrice(totalPrice)
         .userId(cart.getUserId())
         .build();
-  }
-
-  @Override
-  public void deleteCartItem(int cartItemId) {
-
-    cartRepository.deleteCartItem(cartItemId);
-  }
-
-  @Override
-  public void submit() {
-    UserResponse user = getLoggedInUser();
-
-    var cart =
-        cartRepository
-            .findByUserIdAndStatus(user.getId(), CartStatus.ACTIVE)
-            .orElse(ECart.builder().build());
-
-    // change cart status - CHECKOUT
-
   }
 
   BiFunction<Integer, List<CartItem>, CartItem> findByVariant =

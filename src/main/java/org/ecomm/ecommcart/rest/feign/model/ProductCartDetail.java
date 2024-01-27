@@ -14,5 +14,6 @@ public class ProductCartDetail {
     String imageUrl;
     String name;
     double price;
+    String brand;
 
 }

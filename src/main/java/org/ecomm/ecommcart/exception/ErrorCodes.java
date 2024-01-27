@@ -28,6 +28,8 @@ public class ErrorCodes {
 
   public static final String USER_DOES_NOT_EXIST = "user_not_exists";
 
+  public static final String RESOURCE_DOES_NOT_EXIST = "resource_not_exists";
+
   public static final String MISSING_PARTNER_HEADER = "missing_partner_header";
 
   protected static final Map<String, String> errorCodesMap = new HashMap<>();
@@ -49,5 +51,6 @@ public class ErrorCodes {
     errorCodesMap.put(MISSING_PARTNER_HEADER, "Partner header is missing");
     errorCodesMap.put(MISSING_EMAIL_HEADER, "Email header is missing");
     errorCodesMap.put(USER_DOES_NOT_EXIST, "User does not exists");
+    errorCodesMap.put(RESOURCE_DOES_NOT_EXIST, "Resource does not exists");
   }
 }
